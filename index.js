@@ -8,16 +8,19 @@ const profileRoutes = require("./routes/profile-routes");
 require("./config/passport");
 const session = require("express-session");
 const passport = require("passport");
+const flash = require("connect-flash");
 
+// 連結MongoDB
 mongoose
   .connect("mongodb://localhost:27017/GoogleDB")
   .then(() => {
-    console.log("Connect Success...");
+    console.log("Connecting to mongodb...");
   })
   .catch((e) => {
     console.log(e);
   });
 
+// 設定Middlewares以及排版引擎
 app.set("view engine", "ejs");
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
@@ -29,8 +32,15 @@ app.use(
     cookie: { secure: false },
   })
 );
-app.use(passport.initialize()); // 讓passport開始運行認證功能
-app.use(passport.session()); // 讓passport可以使用session
+app.use(passport.initialize());
+app.use(passport.session());
+app.use(flash());
+app.use((req, res, next) => {
+  res.locals.success_msg = req.flash("success_msg");
+  res.locals.error_msg = req.flash("error_msg");
+  res.locals.error = req.flash("error");
+  next();
+});
 
 // 設定routes
 app.use("/auth", authRoutes);
@@ -41,5 +51,5 @@ app.get("/", (req, res) => {
 });
 
 app.listen(8080, () => {
-  console.log("Listening on port 8080...");
+  console.log("Server running on port 8080.");
 });

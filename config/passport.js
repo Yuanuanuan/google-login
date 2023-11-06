@@ -1,6 +1,8 @@
 const passport = require("passport");
 const GoogleStrategy = require("passport-google-oauth20");
 const User = require("../models/user-model");
+const LocalStrategy = require("passport-local");
+const bcrypt = require("bcrypt");
 
 passport.serializeUser((user, done) => {
   // 將MongoDB的id，存到session
@@ -9,7 +11,7 @@ passport.serializeUser((user, done) => {
 });
 
 passport.deserializeUser(async (_id, done) => {
-  let foundUser = await User.findOne({ _id }).exec();
+  let foundUser = await User.findOne({ _id });
   // 將req.user這個屬性設定為foundUser
   done(null, foundUser);
 });
@@ -42,4 +44,20 @@ passport.use(
       }
     }
   )
+);
+
+passport.use(
+  new LocalStrategy(async (username, password, done) => {
+    let foundUser = await User.findOne({ email: username });
+    if (foundUser) {
+      let result = await bcrypt.compare(password, foundUser.password);
+      if (result) {
+        done(null, foundUser);
+      } else {
+        done(null, false);
+      }
+    } else {
+      done(null, false);
+    }
+  })
 );
